@@ -8,6 +8,7 @@ import com.alura.cursos.desafio.service.ConvierteDatos;
 
 import java.text.NumberFormat;
 import java.util.Comparator;
+import java.util.DoubleSummaryStatistics;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
@@ -33,11 +34,13 @@ import java.util.Scanner;
  *
  * 1️⃣ Mostrar los 10 libros más descargados
  * 2️⃣ Buscar libros por título
+ * 3️⃣ Mostrar estadísticas de descargas
  *
  * TECNOLOGÍAS UTILIZADAS
  *
  * ✔ Java Streams
  * ✔ Optional
+ * ✔ DoubleSummaryStatistics
  * ✔ API HTTP Client
  * ✔ Programación funcional
  * ✔ Manejo defensivo de errores
@@ -72,6 +75,8 @@ public class Principal {
 
                 case 2 -> buscarLibroPorTitulo();
 
+                case 3 -> mostrarEstadisticasDescargas();
+
                 case 0 -> System.out.println("\n👋 Gracias por usar el sistema.");
 
                 default -> System.out.println("⚠ Opción inválida.");
@@ -100,6 +105,7 @@ public class Principal {
         System.out.println("""
                 1️⃣  Mostrar Top 10 libros más descargados
                 2️⃣  Buscar libro por título
+                3️⃣  Mostrar estadísticas de descargas
                 0️⃣  Salir
                 
                 Seleccione una opción:
@@ -224,6 +230,58 @@ public class Principal {
     }
 
     /**
+     * ==========================================================
+     * ESTADÍSTICAS DE DESCARGAS
+     * ==========================================================
+     *
+     * Utiliza DoubleSummaryStatistics para calcular:
+     *
+     * ✔ Número total de libros
+     * ✔ Total de descargas
+     * ✔ Promedio de descargas
+     * ✔ Máximo número de descargas
+     * ✔ Mínimo número de descargas
+     */
+    private void mostrarEstadisticasDescargas() {
+
+        System.out.println("\n📊 GENERANDO ESTADÍSTICAS...\n");
+
+        Optional<Datos> datosOptional = obtenerDatosDesdeAPI(URL_BASE);
+
+        if (datosOptional.isEmpty()) return;
+
+        List<DatosLibros> libros = datosOptional.get().resultados();
+
+        DoubleSummaryStatistics estadisticas = libros.stream()
+                .filter(libro -> libro.numeroDescargas() != null)
+                .mapToDouble(DatosLibros::numeroDescargas)
+                .summaryStatistics();
+
+        NumberFormat formato = NumberFormat.getInstance(new Locale("es", "CO"));
+
+        System.out.println("============================================================");
+        System.out.println("             ESTADÍSTICAS DE DESCARGAS");
+        System.out.println("============================================================");
+
+        System.out.printf("📚 Total de libros analizados: %d%n",
+                estadisticas.getCount());
+
+        System.out.printf("⬇ Total de descargas: %s%n",
+                formato.format(estadisticas.getSum()));
+
+        System.out.printf("📊 Promedio de descargas: %s%n",
+                formato.format(estadisticas.getAverage()));
+
+        System.out.printf("🚀 Libro más descargado: %s%n",
+                formato.format(estadisticas.getMax()));
+
+        System.out.printf("📉 Libro menos descargado: %s%n",
+                formato.format(estadisticas.getMin()));
+
+        System.out.println("============================================================\n");
+    }
+
+    /**
      * Muestra la información formateada de un libro.
      */
     private void mostrarLibro(DatosLibros libro, NumberFormat formato) {
@@ -253,8 +311,8 @@ public class Principal {
      * Muestra la información de los autores de un libro.
      *
      * REGLAS:
-     * ✔ Si el autor está vivo NO se muestra la fecha de muerte.
-     * ✔ Si no hay autores se indica apropiadamente.
+     * ✔ Si el autor está vivo NO se muestra la fecha de muerte
+     * ✔ Si no hay autores se indica apropiadamente
      */
     private void mostrarAutores(List<DatosAutor> autores) {
 
